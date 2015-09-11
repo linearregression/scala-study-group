@@ -1,4 +1,4 @@
-# Welcome to the wonderful world of Scala
+# Welcome to the wonderful world of Scala inspired by https://www.manning.com/books/functional-programming-in-scala
 
 Clone this project, then use IntelliJ IDEA with installed Scala plugin.
 
