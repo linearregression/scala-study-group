@@ -29,6 +29,9 @@ def map[A, B](t: Tree[A])(f: A => B): Tree[B] = t match {
   case Branch(l, r) => Branch(map(l)(f), map(r)(f))
 }
 Branch(Branch(Leaf(2), Leaf(3)), Leaf(1)) == map(Branch(Branch(Leaf(1), Leaf(2)), Leaf(0)))(_ + 1)
+Branch(Branch(Leaf(2),Leaf(4)),Leaf(20)) == map(Branch(Branch(Leaf(1), Leaf(2)), Leaf(10)))(_*2)
+Leaf("a2") == map(Leaf("a"))( _ + 2  )
+Leaf("aa") == map(Leaf("a"))( _ * 2  )
 def fold[A, B](t: Tree[A])(handleLeaf: A => B)(handleBranch: (B, B) => B): B = t match {
   case Leaf(x) => handleLeaf(x)
   case Branch(l, r) =>
