@@ -23,6 +23,7 @@ object List {
     if (as.isEmpty) Nil
     else Cons(as.head, apply(as.tail: _*))
 }
+
 def sum(ints: List[Int]): Int = ints match {
   case Nil => 0
   case Cons(x, xs) => x + sum(xs)
@@ -64,6 +65,7 @@ def dropWhile[A](as: List[A])(f: A => Boolean): List[A] = as match {
   case _ => as
 }
 List(4, 5) == dropWhile(List(1, 3, 4, 5))((a) => a % 2 != 0)
+
 def setHead[A](as: List[A], a: A): List[A] = as match {
   case Cons(head, tail) => Cons(a, tail)
   case Nil => Nil
@@ -72,6 +74,7 @@ List(3, 5) == setHead(List(4, 5), 3)
 Nil == setHead(Nil, 1)
 setHead(List(List(), Nil), Nil)
 setHead(List(4, 5), 3)
+
 def init[A](l: List[A]): List[A] =
   l match {
     case Nil => sys.error("init of empty list")
@@ -79,12 +82,14 @@ def init[A](l: List[A]): List[A] =
     case Cons(h, t) => Cons(h, init(t))
   }
 List(1, 2, 3) == init(List(1, 2, 3, 4))
+
 def foldRight[A, B](l: List[A], z: B)(f: (A, B) => B): B = l match {
   case Nil => z
   case Cons(x, xs) => f(x, foldRight(xs, z)(f))
 }
 def sum2(l: List[Int]) =
   foldRight(l, 0.0)(_ + _)
+
 def product2(l: List[Double]) =
   foldRight(l, 1.0)(_ * _)
 def lengthRec[A](l: List[A]): Int = l match {
@@ -100,6 +105,7 @@ def length[A](as: List[A]): Int = {
 3 == length(List(1, 2, 3))
 0 == length(Nil)
 0 == length(List())
+
 @tailrec
 def foldLeft[A, B](l: List[A], z: B)(f: (B, A) => B): B = l match {
   case Nil => z
@@ -108,6 +114,7 @@ def foldLeft[A, B](l: List[A], z: B)(f: (B, A) => B): B = l match {
 foldLeft(List(1, 2, 3), 0)(_ + _) == 6
 def sum3(l: List[Int]) =
   foldLeft(l, 0.0)(_ + _)
+
 def product3(l: List[Double]) =
   foldLeft(l, 1.0)(_ * _)
 6 == product3(List(1, 2, 3))
@@ -115,16 +122,17 @@ def product3(l: List[Double]) =
 def reverse[A](l: List[A]): List[A] =
   foldLeft(l, Nil: List[A])((b, a) => Cons(a, b))
 List(3, 2, 1) == reverse(List(1, 2, 3))
+
 def append[A](a1: List[A], a2: List[A]): List[A] =
   foldRight(a1, a2)(Cons(_, _))
 List(1, 2) == append(List(1), List(2))
+
 def lastElement[A](l: List[A]): A = l match {
   case Nil => sys.error("nein")
   case Cons(h, Nil) => h
   case Cons(_, t) => lastElement(t)
 }
 3 == lastElement(List(1, 2, 3))
-
 //def foldLeftR[A, B](l: List[A], z: B)(f: (B, A) => B): B = {
 //  foldRight(l, (Nil, z))((a, b) => )
 //}
@@ -141,12 +149,11 @@ List(1, 2, 3, 4) == flatten(List(List(1, 2), List(3, 4)))
 // def foldRight[A, B](l: List[A], z: B)(f: (A, B) => B): B
 // def foldLeftR[A, B](l: List[A], z: B)(f: (B, A) => B): B
 def foldLeftViaFoldRight[X, Y](xs: List[X], foldLeftInitial: Y)(foldLeftFn: (Y, X) => Y): Y = {
-
   def transformerFn(x: X, g: (Y) => Y): ((Y) => Y) =
     foldLeftAcc => g(foldLeftFn(foldLeftAcc, x))
-
-  foldRight(xs, (identity[Y] _))(transformerFn)(foldLeftInitial)
+  foldRight(xs, identity[Y] _)(transformerFn)(foldLeftInitial)
 }
+
 def flatten2[A](ll: List[List[A]]): List[A] = {
   val rl = reverse(ll)
   reverse(foldLeft(rl, Nil: List[A])((b, a) => append(b, reverse(a))))
@@ -158,16 +165,19 @@ def incrAll(xs: List[Int]): List[Int] = xs match {
   //  case h :: t => h + 1 :: incrAll(t)
 }
 List(2, 3, 4) == incrAll(List(1, 2, 3))
+
 def toDoubleAll(xs: List[Double]): List[String] = xs match {
   case Nil => Nil
   case Cons(h, t) => Cons(h.toString, toDoubleAll(t))
 }
 List("1.0", "2.0") == toDoubleAll(List(1.0, 2.0))
+
 def map[A, B](xs: List[A])(f: A => B): List[B] = xs match {
   case Nil => Nil
   case Cons(h, t) => Cons(f(h), map(t)(f))
 }
 List(2, 3) == map(List(1, 2))(1 + _)
+
 def filter[A](xs: List[A])(f: (A) => Boolean): List[A] = xs match {
   case Nil => Nil
   case Cons(h, t) if f(h) => Cons(h, filter(t)(f))
@@ -187,14 +197,91 @@ def addLists(xs1: List[Int], xs2: List[Int]): List[Int] = (xs1, xs2) match {
   case (Cons(h1, t1), Cons(h2, t2)) => Cons(h1 + h2, addLists(t1, t2))
   case _ => Nil
 }
-
 List(5, 7, 9) == addLists(List(1, 2, 3, 4), List(4, 5, 6))
 List(5, 7, 9) == addLists(List(1, 2, 3), List(4, 5, 6, 8))
 Nil == addLists(Nil, Nil)
-Nil == addLists(List(1,2), Nil)
-
+Nil == addLists(List(1, 2), Nil)
 def zipWith[X, Y, Z](xs: List[X], ys: List[Y])(f: (X, Y) => Z): List[Z] = (xs, ys) match {
   case (Cons(h1, t1), Cons(h2, t2)) => Cons(f(h1, h2), zipWith(t1, t2)(f))
   case _ => Nil
 }
 List(5, 7, 9) == zipWith(List(1, 2, 3, 4), List(4, 5, 6))(_ + _)
+def hasPrefix[A](who: List[A], whom: List[A]): Boolean = (who, whom) match {
+  case (_, Nil) => true
+  case (Cons(h1, t1), Cons(h2, t2)) if h1 == h2 => hasPrefix(t1, t2)
+  case _ => false
+}
+hasPrefix(Nil, Nil)
+!hasPrefix(Nil, List(1))
+hasPrefix(List(1), Nil)
+hasPrefix(List(1, 2), List(1))
+!hasPrefix(List(1, 2), List(2))
+!hasPrefix(List(1), List(1, 2))
+def hasSubsequence[A](l: List[A], sub: List[A]): Boolean = {
+  hasPrefix(l, sub) || (l != Nil && hasSubsequence(tail(l), sub))
+}
+hasSubsequence(List(1, 2, 3), List(2, 3))
+!hasSubsequence(List(1), List(2))
+!hasSubsequence(List(1, 2), List(1, 2, 3))
+!hasSubsequence(List(1, 2, 3), List(5))
+hasSubsequence(List(1, 1, 2), List(1, 2))
+!hasSubsequence(List(1, 1, 3, 2), List(1, 1, 2))
+
+// Define Tree
+sealed trait Tree[+A]
+case class Leaf[A](value: A) extends Tree[A]
+case class Branch[A](left: Tree[A], right: Tree[A]) extends Tree[A]
+
+def size[A](t: Tree[A]): Int = t match {
+  case Leaf(_) => 1
+  case Branch(l, r) => size(l) + size(r)
+}
+1 == size(Leaf(10))
+2 == size(Branch(Leaf(10), Leaf(20)))
+3 == size(Branch(Branch(Leaf(1), Leaf(2)), Leaf(3)))
+def maximum(t: Tree[Int]): Int = t match {
+  case Leaf(x) => x
+  case Branch(l, r) => maximum(l) max maximum(r)
+}
+10 == maximum(Leaf(10))
+20 == maximum(Branch(Leaf(10), Leaf(20)))
+2 == maximum(Branch(Branch(Leaf(1), Leaf(2)), Leaf(0)))
+def depth[A](t: Tree[A]): Int = t match {
+  case Leaf(_) => 1
+  case Branch(l, r) => 1 + (depth(l) max depth(r))
+}
+1 == depth(Leaf(10))
+2 == depth(Branch(Leaf(10), Leaf(20)))
+3 == depth(Branch(Branch(Leaf(1), Leaf(2)), Leaf(0)))
+def map[A, B](t: Tree[A])(f: A => B): Tree[B] = t match {
+  case Leaf(x) => Leaf(f(x))
+  case Branch(l, r) => Branch(map(l)(f), map(r)(f))
+}
+Branch(Branch(Leaf(2), Leaf(3)), Leaf(1)) == map(Branch(Branch(Leaf(1), Leaf(2)), Leaf(0)))(_ + 1)
+def fold[A, B](t: Tree[A])(handleLeaf: A => B)(handleBranch: (B, B) => B): B = t match {
+  case Leaf(x) => handleLeaf(x)
+  case Branch(l, r) =>
+    val left = fold(l)(handleLeaf)(handleBranch)
+    val right = fold(r)(handleLeaf)(handleBranch)
+    handleBranch(left, right)
+}
+def sizeViaFold[A](t: Tree[A]): Int =
+  fold(t)(x => 1)((a, b) => a + b)
+1 == sizeViaFold(Leaf(10))
+2 == sizeViaFold(Branch(Leaf(10), Leaf(20)))
+3 == sizeViaFold(Branch(Branch(Leaf(1), Leaf(2)), Leaf(3)))
+def depthViaFold[A](t: Tree[A]): Int =
+  fold(t)(x => 1)((l, r) => 1 + (l max r))
+1 == depthViaFold(Leaf(10))
+2 == depthViaFold(Branch(Leaf(10), Leaf(20)))
+3 == depthViaFold(Branch(Branch(Leaf(1), Leaf(2)), Leaf(0)))
+def maximumViaFold(t: Tree[Int]): Int =
+  fold(t)(x => x)((l, r) => l max r)
+10 == maximumViaFold(Leaf(10))
+20 == maximumViaFold(Branch(Leaf(10), Leaf(20)))
+2 == maximumViaFold(Branch(Branch(Leaf(1), Leaf(2)), Leaf(0)))
+def mapViaFold[A, B](t: Tree[A])(f: A => B): Tree[B] =
+  fold[A, Tree[B]](t)(x => Leaf(f(x)))(Branch(_, _))
+Leaf(2) == mapViaFold(Leaf(1))(_ + 1)
+Branch(Leaf(3), Leaf(4)) == mapViaFold(Branch(Leaf(2), Leaf(3)))(_ + 1)
+Branch(Leaf(3), Branch(Leaf(2), Leaf(2))) == mapViaFold(Branch(Leaf(2), Branch(Leaf(1), Leaf(1))))(_ + 1)
