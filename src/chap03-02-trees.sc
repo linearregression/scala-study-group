@@ -46,13 +46,15 @@ def depthViaFold[A](t: Tree[A]): Int =
 1 == depthViaFold(Leaf(10))
 2 == depthViaFold(Branch(Leaf(10), Leaf(20)))
 3 == depthViaFold(Branch(Branch(Leaf(1), Leaf(2)), Leaf(0)))
+
 def maximumViaFold(t: Tree[Int]): Int =
   fold(t)(x => x)((l, r) => l max r)
 10 == maximumViaFold(Leaf(10))
 20 == maximumViaFold(Branch(Leaf(10), Leaf(20)))
 2 == maximumViaFold(Branch(Branch(Leaf(1), Leaf(2)), Leaf(0)))
+
 def mapViaFold[A, B](t: Tree[A])(f: A => B): Tree[B] =
-  fold[A, Tree[B]](t)(x => Leaf(f(x)))(Branch(_, _))
+  fold(t)(x => Leaf(f(x)): Tree[B])(Branch(_, _))
 Leaf(2) == mapViaFold(Leaf(1))(_ + 1)
 Branch(Leaf(3), Leaf(4)) == mapViaFold(Branch(Leaf(2), Leaf(3)))(_ + 1)
 Branch(Leaf(3), Branch(Leaf(2), Leaf(2))) == mapViaFold(Branch(Leaf(2), Branch(Leaf(1), Leaf(1))))(_ + 1)
