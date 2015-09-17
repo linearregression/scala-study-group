@@ -23,16 +23,20 @@ case class Some[+A](v: A) extends Option[A] {
 }
 
 def mean(xs: Seq[Double]): Option[Double] =
-  if (xs.isEmpty)
-    None
-  else
-    Some(xs.sum / xs.size)
+  if (xs.isEmpty) None
+  else Some(xs.sum / xs.size)
 
-def variance(xs: Seq[Double]): Option[Double] = {
-  val mo = mean(xs)
-  mo.flatMap(mm =>
-    mean(xs.map(x =>
-      math.pow(x - mm, 2))))
-}
+def variance(xs: Seq[Double]): Option[Double] =
+  mean(xs).flatMap(m =>
+    mean(xs.map(x => math.pow(x - m, 2))))
 None == variance(List())
-2/3 == variance(List(1,2,3)).getOrElse(0)
+2 / 3 == variance(List(1, 2, 3)).getOrElse(0)
+
+def variance2(xs: Seq[Double]): Option[Double] =
+  for {
+    m <- mean(xs)
+    ds = for (x <- xs) yield math.pow(x - m, 2)
+    v <- mean(ds)
+  } yield v
+None == variance2(List())
+2/3 == variance2(List(1,2,3)).getOrElse(0)
