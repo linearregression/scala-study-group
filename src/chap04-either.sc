@@ -1,3 +1,4 @@
+// Exercise 7
 case class Left[+E](value: E) extends Either[E, Nothing]
 case class Right[+A](value: A) extends Either[Nothing, A]
 trait Either[+E, +A] {
@@ -22,10 +23,11 @@ trait Either[+E, +A] {
     } yield f(aa, bb)
     //this.flatMap(aa => b.map(bb => f(aa, bb)))
 }
+// Exercise 8
 def traverse[E, A, B](a: List[A])(f: A => Either[E, B]): Either[E, List[B]] = a match {
   case Nil => Right(Nil)
   case h :: t => for {
-    hh <- h
+    hh <- f(h)
     tt <- traverse(t)(f)
   } yield hh :: tt
   //f(h).map2(traverse(t)(f))(_ :: _)
