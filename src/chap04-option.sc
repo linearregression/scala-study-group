@@ -27,6 +27,9 @@ case class Some[+A](v: A) extends Option[A] {
 def mean(xs: Seq[Double]): Option[Double] =
   if (xs.isEmpty) None
   else Some(xs.sum / xs.size)
+Some(3.5) == mean(Seq(2,3,4,5))
+Some(3) == mean(Seq(1,2,3,4,5))
+Some(1) != mean(Seq(1,2,3,4,5))
 // Exercise 2
 def variance(xs: Seq[Double]): Option[Double] =
   mean(xs).flatMap(m =>
