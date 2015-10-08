@@ -1,6 +1,6 @@
 object trampoline {
 
-    // The trampoline pattern provides a way to implement non-tail recursive
+    // The trampoline mechanism provides a way to implement non-tail recursive
     // algorithms as a chain of recursive calls embedded in instances of an
     // abstract data type, exchanging recursive stackframes for heap space.
     //
@@ -24,23 +24,25 @@ object trampoline {
     //     at .ackermann(<console>:13)
     //     ...
     //
+    //  Note: see also: [https://en.wikipedia.org/wiki/Ackermann_function]
+    //
     def ackermann(m: Int, n: Int): Int = (m, n) match {
         case (0, _)            => n + 1
         case (_, 0) if (m > 0) => ackermann(m - 1, 1)
         case (_, _)            => ackermann(m - 1, ackermann(m, n - 1))  
     }
 
-    // We would like to implement the ackerman function in a tailrecursive
-    // manner, staying close to the original implementation, here is where
-    // trampolines come in.  A trampoline is defined as a monoidic abstract
+    // We would like to implement the ackerman function in a tail recursive
+    // manner, staying close to the original definition, here is where
+    // trampolines come in.  A trampoline is defined as a monadic abstract
     // data type, parameterized for the result type of a recursive call
     // chain and one central method `result` which executes that chain and
     // returns its result.  Additionally a trampoline defines `map` and
     // `flatMap` methods that can transform the result of a recursive call
     // chain, making it possible to compose tail recurive algorithms or
-    // encoding them using for-comprehensions.  The latter one being usefull
-    // when implementing algorithms that are defined with inner recursion,
-    // such as the ackermann function.
+    // encoding them using for-comprehensions.  This latter use-case being
+    // the implementation of algorithms defined with inner recursion, such
+    // as the ackermann function.
     //
     // The complete definition of a trampoline requires only a few lines
     // of code as shown below.  The implementation is quite subtle, but
@@ -70,43 +72,45 @@ object trampoline {
         def map[B](f: A => B): Tramp[B] = flatMap(a => Done(f(a)))
     }
 
-    // The central idea around tramolines is to wrap every recurion in a
-    // type instance of a trampoline, the easiest instance being the call
-    // terminating a recursive chain, containing its result.  We name this
-    // instance `Done` and encode it it as an instance of trampoline simply
-    // holding the value it returns as a case class parameter.
+    // The central idea around tramolines is to wrap every recursive call in
+    // a type instance of a trampoline, the easiest instance being the call
+    // terminating the recursive chain and containing the algorithm's result.
+    // We name this instance `Done` and encode it extending trampoline simply
+    // by holding the value it returns as a case class parameter.
     case class Done[+A](a: A) extends Tramp[A]
 
     // Secondly we require a type instance of a trampoline that is able to
     // model a recursive call and defer its execution.  This can be done
-    // in scala beautifully with the definition of what is called a _thunk_.
+    // in scala elegantly with the definition of what is called a _thunk_.
     // A thunk is a function value that takes no input parameters and returns
-    // a result, in our case the next trampoline in the recursive call chain.
+    // a result, in our case the next recursive call in the call chain.
     case class Call[+A](t: () => Tramp[A]) extends Tramp[A]
 
     // Lastly, we model as a type instance of a trampoline the definition of
     // a continuation.  Continuations are what makes the trampoline mechanism
-    // so usefull when we want to compose recursive algorithms, employing `map`
+    // usefull when we want to compose recursive algorithms, employing `map`
     // and `flatMap`.  The continuation instance `Cont` holds as a case class
-    // parameter a (non-executed) tramopline call chain `s`, and the intented
-    // continuation after execution of `s`, taking its result of type `A` which
-    // will be passed into a new trampoline call chain `c`, returning type `B`.
+    // parameter a (non-executed) tramopline `s` and its continuation `c` after
+    // application of `s`. `c` takes the result of `s` as type `A` which
+    // will be passed into a new trampoline resulting type `B`.
     case class Cont[A, +B] (s: Tramp[A], c: A => Tramp[B]) extends Tramp[B]
     
 
     // The type class instances are not intended to be used directly by the
     // user implementing a non-tail recursive algorithm in a tail recursive
     // manner.  Instead we provide two factory methods modeling a tail call
-    // that is done, called `tdone` and one that recurses called `tcall`.
+    // that is done, named `tdone` and one that representing a tail recursive
+    // call, named `tcall`.
     def tdone[A](a: A)           = Done(a)
     def tcall[A](t: => Tramp[A]) = Call(() => t)
 
 
     // With this two factory methods we are able to implement the non-tail
     // recursive ackermann function true to the structure of its definition
-    // by explicitly calling `tdone` at the recurion's breaking case, `tcall`
-    // whenever a recursive call occurs, and employing the `map` and `flatMap`
-    // to factor out the inner recursion in a for-comprehension. 
+    // by explicitly calling `tdone` at the recurion's breaking case and
+    // `tcall` whenever a recursive call occurs in our algorithm.  We employing
+    // the `map` and `flatMap` methods to factor out the inner recursion in a
+    // for-comprehension. 
     def ackermannTramp(m: Int, n: Int): Tramp[Int] = (m, n) match {
         case (0, _)            => tdone(n + 1)
         case (_, 0) if (m > 0) => tcall(ackermannTramp(m - 1, 1))
@@ -122,16 +126,17 @@ object trampoline {
     //   res1: Int = 65533
     //
     // Execution of this function takes aproximitly 3 minutes on a Macbook
-    // Air 2013, but... returns a result without running into a stack overflow.
+    // Air 2013, but... it returns a result without running into a stack
+    // overflow, which for ackermann implementations is quite an achievement.
     //
     // Lets have a look on how the trampoline methods are implemented.
     //
     // Central to the trampoline, and without its monadic `map` and `flatMap`
     // methods lay the type instances, `Done` and `Call`.  Upon execution, the
     // `result` method simply matches the instance, returning the contained
-    // in the case that the tecursion is `Done`, or applies the tail call's
-    // thunk from which it returns its result recursively in the case that the
-    // instance is a `Call`:
+    // result value in the case that the recursion is `Done`, or applying the
+    // tail call's thunk from which it returns its result recursively in the
+    // case that the instance is a `Call`, a "current step in the chain":
     //
     //   def result: A = this match {
     //       case Done(a)    => a
@@ -147,8 +152,8 @@ object trampoline {
     // Note that we want to defer execution of the complete composed trampoline
     // up to the moment that the `result` method is being executed at the call-
     // side, which is the reason that we modelled the continuation as a type
-    // instance of a trampoline itself.  We provide for this case with an
-    // inner match on `Cont`'s left hand side `s`:
+    // instance of a trampoline itself, named `Cont`.  We provide for this case
+    // with an inner match on `Cont`'s left hand side `s`:
     //
     //   def result: A = this match {
     //       case Done(a)    => a
@@ -165,22 +170,23 @@ object trampoline {
     // execute the result of this composed chain, again recursively.  Both
     // cases are quite straight forward, but what should we do in case `s` is a
     // continuation itself?  Here is where the monadic design of a trampoline
-    // comes into play.
+    // comes to the rescue.
     // 
     // Since the left hand side `ss` and the right hand side `cc` of the
     // current continuation value `c` are trampolines, we can compose the
     // complete trampoline by flat-mapping a function over `s` which itself
     // is a composition of the inner continuation `cc` and the outer
-    // continuation `c`.  We do this while applying the current trampoline step
-    // in `Cont`'s left hand side `x`, and then and only then call `result` on
-    // the composed function, thus defering execution of the application of `x`
-    // while the recursive function is composed.  That is pretty nifty!
+    // continuation `c`.  We do this while applying the current recursive step
+    // in `Cont`'s left hand side `x`, and then (and only then) call `result`
+    // on the composed function, thus defering execution of the application of
+    // `x` while the recursive function is composed.  That is pretty nifty, but
+    // lets read it again and compare it with the implemetation!
     // 
-    // What remains to be implemented are the monadic methods `map` and
+    // Remaining to be implemented are the monadic methods `map` and
     // `flatMap` themself.  We implement `flatMap` by matching on the current
     // type instance and employ our continuation type `Cont`, simply passing it
-    // given transformation function `f` as the continuation, shown in the case
-    // that the current instance is `c` below.
+    // given transformation function `f` as the continuation, shown in the
+    // implementation below as case `c`.
     //
     //   def flatMap[B](f: A => Tramp[B]): Tramp[B] = this match {
     //       case Cont(s, c) => Cont(s, (x: Any) => c(x) flatMap f)
@@ -193,10 +199,10 @@ object trampoline {
     // thus composing `f` as "the continuation of the continuation" of the
     // trampoline under construction.
     //
-    // Remains to be implement the method `map` which is trivial now that we
-    // have an implementation of `flatmap`.  We just flatmap a function
-    // taking the result of the current trampoline returning a `Done` instance
-    // after application of given transformation function `f`.
+    // Last to be implement is the method `map` which is a trivial case now
+    // that we have an implementation for `flatMap`.  We just flatmap a
+    // function that takes the result of the current trampoline and return
+    // a `Done` instance after application of given transformation function.
     //
     //   def map[B](f: A => B): Tramp[B] = flatMap(a => Done(f(a)))
     //
@@ -204,22 +210,24 @@ object trampoline {
     // The ackermann function was designed to show the existance of functions
     // that cannot be defined in a non-recursive way.  The usefullness of the
     // function itself is limited, its value grows rapidly, even for small
-    // inputs.  For example A(4,2) is an integer of 19,729 decimal digits.  The
-    // trampoline mechanism is usefull non the less, functions that can be 
-    // defined both recursively and iteratively can differ much in readability.
+    // inputs.  For example ackerman(4,2) yields an integer of 19,729 decimal
+    // digits.  The trampoline mechanism is usefull non the less, functions
+    // that can be defined both recursively and iteratively can differ much in
+    // readability.
+    //
     // In cases where the recursive function is more idiomatic or more read-
     // able, but the nature of the recursive function can not be implemented
     // in a tail recursive manner, we now have a way to exchange stack frames
     // for heap space, while retaining the structure of the definition in code.
     //
     // All of the above was written as an explanation how to implement non-
-    // tail recursive algorithems, such as the ackermann function, employing
+    // tail recursive algorhitms such as the ackermann function, employing
     // the trampoline mechanism.  The trampoline and its type instances themself
     // are part of scala's libery, we don't need to code them ourself as an
-    // implementation of a trampoline called `TailCals` is available in the 
-    // package `scala.util.control`.  You can just import it, and implement
-    // your recursively defined algorithm as shown above,... but now you also
-    // knows how it works internally.
+    // implementation of a trampoline called `TailCalls` is available in the 
+    // package `scala.util.control`.  We can just import it and implement
+    // our recursively defined algorithm as shown above,...  but now while
+    // understanding how things are working internally.
     //
     import scala.util.control.TailCalls._ 
     def ackermannTailRec(m: Int, n: Int): TailRec[Int] = (m, n) match {
